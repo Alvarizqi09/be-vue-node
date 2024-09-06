@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(express.json()); // Middleware to parse JSON bodies
+
 // Data JSON
 const data = {
   "best-products": [
@@ -133,6 +135,19 @@ app.get("/api/products", (req, res) => {
 
 app.get("/api/keranjangs", (req, res) => {
   res.json(data["keranjangs"]);
+});
+
+app.post("/api/keranjangs", (req, res) => {
+  const newKeranjang = req.body;
+  newKeranjang.id = (Math.random() + 1).toString(36).substring(7); // Generate a random id
+  data.keranjangs.push(newKeranjang);
+  res.status(201).json(newKeranjang);
+});
+
+app.delete("/api/keranjangs/:id", (req, res) => {
+  const { id } = req.params;
+  data.keranjangs = data.keranjangs.filter((keranjang) => keranjang.id !== id);
+  res.status(204).end();
 });
 
 app.get("/api/pesanans", (req, res) => {
