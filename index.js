@@ -1,8 +1,24 @@
+// server.js
+
 const express = require("express");
+const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json()); // Middleware to parse JSON bodies
+
+// CORS configuration
+const corsOptions = {
+  origin: [
+    "http://localhost:5173", // Local development
+    "https://tech-ann.vercel.app", // Tech Ann deployment
+    "https://be-vue-node.vercel.app", // Be Vue Node deployment
+  ],
+  methods: ["GET", "POST", "DELETE", "PUT"], // Allowed methods
+  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+};
+
+app.use(cors(corsOptions)); // Apply CORS middleware with options
 
 // Data JSON
 const data = {
