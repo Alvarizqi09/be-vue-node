@@ -1,24 +1,21 @@
-// server.js
-
 const express = require("express");
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(express.json()); // Middleware to parse JSON bodies
+app.use(express.json());
 
-// CORS configuration
 const corsOptions = {
   origin: [
-    "http://localhost:5173", // Local development
-    "https://tech-ann.vercel.app", // Tech Ann deployment
-    "https://be-vue-node.vercel.app", // Be Vue Node deployment
+    "http://localhost:5173",
+    "https://tech-ann.vercel.app",
+    "https://be-vue-node.vercel.app",
   ],
-  methods: ["GET", "POST", "DELETE", "PUT"], // Allowed methods
-  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  methods: ["GET", "POST", "DELETE", "PUT"],
+  credentials: true,
 };
 
-app.use(cors(corsOptions)); // Apply CORS middleware with options
+app.use(cors(corsOptions));
 
 // Data JSON
 const data = {
@@ -140,7 +137,6 @@ const data = {
   pesanans: [],
 };
 
-// Endpoints
 app.get("/api/best-products", (req, res) => {
   res.json(data["best-products"]);
 });
@@ -165,7 +161,7 @@ app.get("/api/keranjangs", (req, res) => {
 
 app.post("/api/keranjangs", (req, res) => {
   const newKeranjang = req.body;
-  newKeranjang.id = (Math.random() + 1).toString(36).substring(7); // Generate a random id
+  newKeranjang.id = (Math.random() + 1).toString(36).substring(7);
   data.keranjangs.push(newKeranjang);
   res.status(201).json(newKeranjang);
 });
