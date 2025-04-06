@@ -175,6 +175,32 @@ app.delete("/api/keranjangs/:id", (req, res) => {
 app.get("/api/pesanans", (req, res) => {
   res.json(data["pesanans"]);
 });
+app.post("/api/checkout", (req, res) => {
+  if (data.keranjangs.length === 0) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Keranjang kosong" });
+  }
+
+  const invoice = {
+    id: `INV-${Date.now()}`,
+    date: new Date().toISOString(),
+    items: [...data.keranjangs],
+    total: data.keranjangs.reduce(
+      (acc, item) => acc + item.jumlah_pesanan * item.products.harga,
+      0
+    ),
+  };
+
+  data.pesanans.push(invoice);
+  data.keranjangs = [];
+
+  res.json({
+    success: true,
+    invoice,
+    message: "Checkout berhasil",
+  });
+});
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
