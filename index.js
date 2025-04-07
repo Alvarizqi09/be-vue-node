@@ -202,6 +202,26 @@ app.post("/api/checkout", (req, res) => {
   });
 });
 
+// Endpoint untuk screenshot dengan Puppeteer
+app.get("/api/screenshot", async (req, res) => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  // Load halaman yang berisi Tailwind CSS
+  await page.goto("http://localhost:5173/success", {
+    waitUntil: "networkidle0",
+  });
+
+  // Ambil screenshot dari halaman tersebut
+  const screenshotBuffer = await page.screenshot({ fullPage: true });
+
+  // Kirim screenshot dalam format PNG ke klien
+  res.contentType("image/png");
+  res.send(screenshotBuffer);
+
+  await browser.close();
+});
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
