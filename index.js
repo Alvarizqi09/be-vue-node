@@ -202,95 +202,88 @@ app.post("/api/checkout", (req, res) => {
   });
 });
 
-app.post("/api/download-struk", async (req, res) => {
-  const { invoice } = req.body;
-
-  if (!invoice) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invoice tidak ditemukan" });
-  }
+// Convert HTML to Image using Puppeteer
+app.post("/api/generate-image", async (req, res) => {
+  const { invoiceData } = req.body; // Invoice data should be passed from the frontend
 
   try {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    // Mengirimkan HTML untuk dirender dengan Puppeteer
-    const invoiceHtml = `
-      <!DOCTYPE html>
-      <html lang="id">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Struk Pembelian</title>
-        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-      </head>
-      <body class="bg-gray-100 py-10">
-        <div class="container mx-auto p-6 bg-white shadow-lg rounded-lg max-w-md">
-          <div class="text-center mb-8">
-            <h1 class="text-xl font-bold">Toko Laptop AnnTech</h1>
-            <p class="text-sm">Jl. Teknologi No. 123, Jakarta</p>
-            <p class="text-sm">Telp: (021) 555-1234</p>
-            <h2 class="text-lg font-bold text-green-600 mb-2">STRUK PEMBELIAN</h2>
-            <p class="text-xs text-gray-600">Tanggal: ${new Date(
-              invoice.date
-            ).toLocaleDateString("id-ID")}</p>
-          </div>
-
-          <div class="mb-8">
-            <div class="border-b mb-4"></div>
-            <div class="text-xs">
-              ${invoice.items
-                .map(
-                  (item) => `
-                <div class="mb-2 flex justify-between">
-                  <div>
-                    <p class="font-medium">${item.products.nama}</p>
-                    <p class="text-gray-600">${
-                      item.jumlah_pesanan
-                    } x Rp${item.products.harga.toLocaleString("id-ID")}</p>
-                  </div>
-                  <p>Rp${(
-                    item.jumlah_pesanan * item.products.harga
-                  ).toLocaleString("id-ID")}</p>
-                </div>
-              `
-                )
-                .join("")}
+    // Set the HTML content for rendering
+    const htmlContent = `
+      <html>
+        <head>
+          <title>Invoice</title>
+          <style>
+            ${generateTailwindCSS()}
+          </style>
+        </head>
+        <body>
+          <div class="invoice-container">
+            <h1 class="text-3xl font-bold text-green-600 mb-2">Invoice #${
+              invoiceData.id
+            }</h1>
+            <p>Terima kasih telah berbelanja!</p>
+            <div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${invoiceData.items
+                    .map(
+                      (item) => `
+                        <tr>
+                          <td>${item.products.nama} (${
+                        item.jumlah_pesanan
+                      }x)</td>
+                          <td>Rp${
+                            item.jumlah_pesanan * item.products.harga
+                          }</td>
+                        </tr>
+                      `
+                    )
+                    .join("")}
+                </tbody>
+              </table>
             </div>
-            <div class="mt-6 text-right border-t pt-4">
-              <p class="text-sm font-bold">Total: Rp${invoice.total.toLocaleString(
-                "id-ID"
-              )}</p>
-            </div>
+            <div>Total: Rp${invoiceData.total}</div>
           </div>
-
-          <div class="text-center text-xs mt-8 text-gray-500">
-            <p>Terima kasih telah berbelanja di AnnTech</p>
-            <p>Barang yang sudah dibeli tidak dapat dikembalikan</p>
-          </div>
-        </div>
-      </body>
+        </body>
       </html>
     `;
 
-    await page.setContent(invoiceHtml, { waitUntil: "domcontentloaded" });
-    const screenshotBuffer = await page.screenshot({ fullPage: true });
+    // Set the page content
+    await page.setContent(htmlContent);
+
+    // Screenshot and save the image
+    const imageBuffer = await page.screenshot({ type: "png" }); // Can be 'jpeg' or 'png'
+
+    // Send the image as a response
+    res.setHeader("Content-Type", "image/png");
+    res.send(imageBuffer);
 
     await browser.close();
-
-    res.contentType("image/png");
-    res.send(screenshotBuffer);
   } catch (error) {
-    console.error("Error capturing screenshot:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Terjadi kesalahan saat mengambil screenshot",
-      });
+    console.error("Error generating image:", error);
+    res.status(500).json({ message: "Failed to generate image." });
   }
 });
+
+// Helper function to include TailwindCSS (You can configure this according to your build)
+const generateTailwindCSS = () => `
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  .invoice-container { width: 100%; max-width: 600px; margin: auto; }
+  h1 { text-align: center; color: #34D399; }
+  table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+  th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+  tr:nth-child(even) { background-color: #f9f9f9; }
+  .total { font-weight: bold; margin-top: 20px; text-align: right; }
+`;
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
